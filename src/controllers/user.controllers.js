@@ -3,6 +3,7 @@ import {ApiError} from "../utils/ApiError.js"
 import { User } from "../models/user.models.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
+import { response } from "express"
 
 const registerUser = asyncHandler( async (req, res) => {
     // get user details from frontend
@@ -16,7 +17,7 @@ const registerUser = asyncHandler( async (req, res) => {
     // return response else error
 
     const {fullName, email, username, password }= req.body
-    console.log("email : ", email);
+    //console.log("email : ", email);
 
     if(fullName === ""){
         throw new ApiError(400, "Fullname is required")
@@ -30,25 +31,91 @@ const registerUser = asyncHandler( async (req, res) => {
         throw new ApiError(400, "All fields are required")
     }
 
-    const existedUser=User.findOne({
+    const existedUser=await User.findOne({
         $or:[{username},{email}]
     })
 
     if(existedUser){
         throw new ApiError(409, "User with email or userrname already exists")
     }
+   // console.log(req.files);
+    /**
+     * [Object: null prototype] {
+  avatar: [
+    {
+      fieldname: 'avatar',
+      originalname: 'dp6.jpg',
+      encoding: '7bit',
+      mimetype: 'image/jpeg',
+      destination: './public/temp',
+      filename: 'dp6.jpg',
+      path: 'public\\temp\\dp6.jpg',
+      size: 90075
+    }
+  ],
+  coverImage: [
+    {
+      fieldname: 'coverImage',
+      originalname: 'dp4.jpg',
+      encoding: '7bit',
+      mimetype: 'image/jpeg',
+      destination: './public/temp',
+      filename: 'dp4.jpg',
+      path: 'public\\temp\\dp4.jpg',
+      size: 82009
+    }
+  ]
+}
+     */
+  //  console.log(response);
+
+    /**
+     * ServerResponse {
+  status: [Function: status],
+  links: [Function (anonymous)],
+  send: [Function: send],
+  json: [Function: json],
+  jsonp: [Function: jsonp],
+  sendStatus: [Function: sendStatus],
+  sendFile: [Function: sendFile],
+  sendfile: [Function (anonymous)],
+  download: [Function: download],
+  type: [Function: contentType],
+  contentType: [Function: contentType],
+  format: [Function (anonymous)],
+  attachment: [Function: attachment],
+  append: [Function: append],
+  header: [Function: header],
+  set: [Function: header],
+  get: [Function (anonymous)],
+  clearCookie: [Function: clearCookie],
+  cookie: [Function (anonymous)],
+  location: [Function: location],
+  redirect: [Function: redirect],
+  vary: [Function (anonymous)],
+  render: [Function: render]
+}
+     */
 
 
     const avatarLocalPath=req.files?.avatar[0]?.path;
     //console.log(reg.files);
 
-    const coverImageLocalPath= req.files?.coverImage[0]?.path;
+    //const coverImageLocalPath= req.files?.coverImage[0]?.path;
+
+
+    //for undefined error of cover Image Local Path being undefined
+    let coverImageLocalPath;
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length>0){
+        coverImageLocalPath=req.files.coverImage[0].path
+    }
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is required ")
     }
 
     const avatar = await uploadOnCloudinary(avatarLocalPath)
+
     const coverImage =await uploadOnCloudinary(coverImageLocalPath)
 
     if(!avatar){
