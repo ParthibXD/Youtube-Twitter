@@ -174,7 +174,7 @@ const loginUser = asyncHandler( async (req, res) =>{
     // send cookies
 
     const {email, username, password} =req.body
-    console.log(email);
+    // console.log(fullName);
 
 
     if(!username && !email){
@@ -295,9 +295,10 @@ const refreshAccessToken =asyncHandler(async (req, res)=>{
                 {
                     accessToken,
                     refreshToken: newrefreshToken
-                }
-            ),
+                },
+            
             "Access token refreshed"
+            )
         )
     } catch (error) {
         throw new ApiError(401,error?.message || "Invalid Refresh Token")
@@ -334,13 +335,21 @@ const getCurrentUser = asyncHandler ( async (req  , res) => {
     .status(200)
     .json(new  ApiResponse(
         200, 
-        req, 
+        req.user, 
         "Current User fetched Successfully"
     ))
 })
 
 const updateAccountDetails = asyncHandler( async ( req, res)=>{
     const {fullName, email}= req.body
+
+    // const user=await User.findById(req.user?._id)
+    // if(!user){
+    //     throw new ApiError(400, "User Not found") 
+    // }
+
+    // console.log("............",user.fullName);
+    // console.log(fullName);
 
     if (!fullName || !email) {
         throw new ApiError(400, "All fields are required")
@@ -351,8 +360,8 @@ const updateAccountDetails = asyncHandler( async ( req, res)=>{
         req.user?._id,
         {
             $set:{
-                fullName,
-                email
+                fullName:fullName,
+                email:email
                 //email:email
             }
         },
@@ -372,7 +381,7 @@ const updateAccountDetails = asyncHandler( async ( req, res)=>{
 })
 
 const updateUserAvatar = asyncHandler( async (req, res) => {
-    const avatarLocalPath = req.files?.path
+    const avatarLocalPath = req.file?.path
 
     if(!avatarLocalPath){
         throw new ApiError(400, "Avatar File is Missing")
