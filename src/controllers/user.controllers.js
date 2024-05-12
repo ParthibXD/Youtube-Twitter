@@ -233,9 +233,13 @@ const logoutUser= asyncHandler( async(req,  res) =>{
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set:{
-                refreshToken: undefined,
+            $unset:{
+                refreshToken: 1,
             }
+            // Instead of
+            // $set:{
+            //     refreshToken: undefined,
+            // }
         },
         {
             new: true
@@ -509,6 +513,7 @@ const getUserChannelProfile = asyncHandler( async (req,res) =>{
                 username:1,
                 subscribersCount:1,
                 channelSubscribedToCount:1,
+                isSubscribed:1,
                 avatar:1,
                 coverImage:1,
                 email:1,
@@ -538,8 +543,8 @@ const getWatchHistory = asyncHandler( async(req, res)=>{
             $match:{
                 //mongoose id is returned as a String in req.user._id 
                 //by using the following code it is converted into a mongodb id
-                
-                _id:mongoose.Types.ObjectId.createFromTime(req.user._id)
+
+                _id:mongoose.Types.ObjectId(req.user._id)
 
             }
         },
