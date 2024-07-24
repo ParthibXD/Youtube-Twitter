@@ -1,11 +1,11 @@
 import mongoose, { Schema, isValidObjectId } from "mongoose";
-import { Comment } from "../models/comment.model.js";
-import { Video } from "../models/video.model.js";
-import { Like } from "../models/like.model.js";
+import { Comment } from "../models/comment.models.js";
+import { Video } from "../models/video.models.js";
+import { Like } from "../models/like.models.js";
 //import ApiError from "../utils/apiError.js";
 import { ApiError } from "../utils/ApiError.js";
-import ApiResponse from "../utils/ApiResponse.js";
-import asyncHandler from "../utils/asyncHandler.js";
+import {ApiResponse} from "../utils/ApiResponse.js";
+import {asyncHandler} from "../utils/asyncHandler.js";
 
 
 const getVideoComments= asyncHandler(async(req,res)=>{
@@ -54,7 +54,7 @@ const getVideoComments= asyncHandler(async(req,res)=>{
                     $size:"$likes"
                 },
                 owner:{
-                    $first:"owner"
+                    $first:"$owner"
                 },
                 isLiked:{
                     $cond:{

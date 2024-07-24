@@ -4,7 +4,7 @@ import {
     deleteComment,
     getVideoComments,
     updateComment,
-} from "../controllers/comment.controller.js";
+} from "../controllers/comment.controllers.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 

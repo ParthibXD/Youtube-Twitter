@@ -27,9 +27,21 @@ const uploadOnCloudinary= async (localFilePath) => {
             return response; 
     } catch (error) {
         fs.unlinkSync(localFilePath)//to remove the locally saved temp file if not uploaded
-        return null;
+        return error;
+    }
+}
+
+const deleteOnCloudinary = async(public_id,resource_type="image")=>{
+    try{
+        if(!public_id) return null
+
+        const result= await cloudinary.uploader.destroy(public_id,{
+            resource_type:`${resource_type}`
+        })
+    }catch(error){
+        return error;
     }
 }
     
 
-export {uploadOnCloudinary}
+export {uploadOnCloudinary, deleteOnCloudinary}
