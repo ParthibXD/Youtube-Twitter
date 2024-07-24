@@ -8,7 +8,7 @@ import {
 } from "../controllers/like.controllers.js"
 
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-import router from "./user.routes";
+import router from "./user.routes.js";
 
 
 const router= Router()

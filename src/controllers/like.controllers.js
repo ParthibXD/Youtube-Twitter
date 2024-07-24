@@ -5,14 +5,46 @@ import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
-    const { videoId } = req.params;
+    const { videoID }= req.params;
 
-    if(!isValidObjectId(videoId)){
-        throw new ApiError(400, "Invalid Video Id")
+    if(!isValidObjectId(videoID)){
+        throw new ApiError(400, "Invalid Video Ids")
+    }
+    const likedAlready= await Like.findOne({
+        video:videoID,
+        likedBy:req.user?._id,
+    });
+
+    if(likedAlready){
+        await Like.findByIdAndDelete(likedAlready?._id);
+
+        return res
+        .status(200)
+        .json(new ApiResponse(
+            200,
+            {isLiked:false}
+        ))
     }
 
-    const likedAlready = await Like.findOne({
-        video:videoId,
+
+    await Like.create({
+        video:videoID,
+        likedBy:req.user?._id
+    })
+
+    return res.status(200)
+    .json(new ApiResponse(200, {isLiked:true}))
+})
+
+const toggleCommentLike= asyncHandler(async(req,res)=>{
+    const {commentId}=req.params;
+
+    if(!isValidObjectId(commentId)){
+        throw new ApiError(400, "Invalid Comment id")
+    }
+
+    const likedAlready=await Like.findOne({
+        comment:commentId,
         likedBy:req.user?._id
     })
 
@@ -20,84 +52,42 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
         await Like.findByIdAndDelete(likedAlready?._id);
 
         return res.status(200)
-        .json(new ApiResponse(200,{isLiked:false},"Like Status Changed"))
-    }
-
-    await Like.create({
-        video:videoId,
-        likedBy:req.user?._id
-    });
-
-    return res.status(200)
-    .json(
-        new ApiResponse(
-            200,
-            {
-                isLiked:true
-            },
-            "Like Status Changed"
-        )
-    )
-
-})
-
-const toggleCommentLike= asyncHandler(async(req,res)=>{
-    const {commentId}= req.params;
-
-    if(!isValidObjectId(commentId)){
-        throw new ApiError(400, "Comment id invalid")
-    }
-
-    const likedAlready= await Like.findOne({
-        comment:commentId,
-        likedBy:req.user?._id
-    })
-
-    if(likedAlready){
-        await Like.findByIdAndDelete(likedAlready?._id)
-
-        return res.status(200)
-            .json(
-            new ApiResponse(200, {isLiked:false}, "Status Changed")
-        )
+        .json(new ApiResponse(200, {isLiked:false}))
     }
 
     await Like.create({
         comment:commentId,
-        likedBy:req.user?._id
+        likedBy:req.user?._id,
+
     })
 
-    return res.status(200)
-    .json(
-        new ApiResponse(200, {isLiked:true}, "Status Changed")
-    )
 
+    return res.status(200)
+    .json(new ApiResponse(
+        200,
+        {isLiked:true}
+    ));
 })
 
 const toggleTweetLike = asyncHandler(async (req, res) => {
-    const { tweetId } = req.params;
-
+    const {tweetId}= req.params;
 
     if(!isValidObjectId(tweetId)){
-        throw new ApiError(400, "Tweet Id is invalid")
+        throw new ApiError(400, "Tweet ID invalid")
     }
 
-    const likedAlready= await Like.findOne(tweetId)
+    const likedAlready= await Like.findOne({
+        tweet:tweetId,
+        likedBy:req.user?._id,
+    })
 
     if(likedAlready){
-        await Like.findByIdAndDelete(likedAlready?._id)
+        await Like.findByIdAndDelete(likedAlready?._id);
+
 
         return res.
         status(200)
-        .json(
-            new ApiResponse(
-                200,
-                {
-                    isLiked:false
-                },
-                "Like Status Changed"
-            )
-        )
+        .json(200, {isLiked:false})
     }
 
     await Like.create({
@@ -105,16 +95,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
         likedBy:req.user?._id
     })
 
-
-    return res.status(200)
-    .json(new ApiResponse(
-            200,
-            {
-                isLiked:true
-            },
-            "Status Changed"
-        )
-    )
+    return res.status(200).json(200,{isLiked:true})
 })
 
 const getLikedVideos= asyncHandler(async(req,res)=>{
@@ -122,9 +103,7 @@ const getLikedVideos= asyncHandler(async(req,res)=>{
         {
             $match:{
                 $expr:{
-                    $eq:[
-                        "$likedBy", mongoose.Types.ObjectId(req.user?._id)
-                    ]
+                    $eq:["$_id",mongoose.Types.ObjectId(req.user?._id)]
                 }
             }
         },
@@ -134,7 +113,7 @@ const getLikedVideos= asyncHandler(async(req,res)=>{
                 localField:"video",
                 foreignField:"_id",
                 as:"likedVideo",
-                pipeLine:[
+                pipeline:[
                     {
                         $lookup:{
                             from:"users",
@@ -144,19 +123,13 @@ const getLikedVideos= asyncHandler(async(req,res)=>{
                         }
                     },
                     {
-                        //The $unwind operator in MongoDB's aggregation pipeline 
-                        // is used to deconstruct an array field from input documents 
-                        // into multiple documents. This is particularly useful when 
-                        // you have documents with arrays and you want to perform 
-                        // operations or aggregations on each element of the array 
-                        // separately.
                         $unwind:"$ownerDetails"
                     }
                 ]
             }
         },
         {
-            $unwind:"likedVideo"
+            $unwind:"$likedVideo"
         },
         {
             $sort:{
@@ -164,33 +137,33 @@ const getLikedVideos= asyncHandler(async(req,res)=>{
             }
         },
         {
-            project:{
+            $project:{
                 _id:0,
                 likedVideo:{
                     _id:1,
-                    videoFile:1,
-                    thumbnail:1,
+                    "videoFile.url":1,
+                    "thumbnail.url":1,
                     owner:1,
                     title:1,
-                    decription:1,
+                    description:1,
                     views:1,
                     duration:1,
                     createdAt:1,
                     isPublished:1,
-                    ownerDetails:1,
                     ownerDetails:{
                         username:1,
                         fullName:1,
-                        avatar:1,
+                        "avatar.url":1
                     }
-
                 }
             }
         }
     ])
 
-    return res.status(200)
-    .json(
+
+    return res
+    .status.
+    json(
         new ApiResponse(
             200,
             likedVideosAggregate,
