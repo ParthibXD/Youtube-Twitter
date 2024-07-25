@@ -41,7 +41,10 @@ const getAllVideos=asyncHandler(async(req,res)=>{
         pipeline.push({
             $match:{
                 $expr:{
-                    $eq:["$_id",mongoose.Types.ObjectId(userId)]
+                    $eq:[
+                        '$_id',
+                        { $convert: { input: userId, to: 'objectId' } }
+                    ]
                 }
             }
         })
@@ -108,8 +111,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All fields are required");
     }
 
-    const videoFilePath=req.user?.videoFile[0].path;
-    const thumbnailLocalPath=req.user?.thumbnail[0].path;
+    const videoFilePath=req.files?.videoFile[0].path;
+    const thumbnailLocalPath=req.files?.thumbnail[0].path;
 
     if(!videoFilePath){
         throw new ApiError(400, "Video File Path is required")
@@ -152,7 +155,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Video upload failed! Try again")
     }
 
-    return res.status.json(new ApiResponse
+    return res.status(200).json(new ApiResponse
         (200,
         video,
         "Video uploaded successfully")
@@ -178,7 +181,10 @@ const getVideoById = asyncHandler(async (req, res) => {
         {
             $match:{
                 $expr:{
-                    $eq:["$_id",mongoose.Types.ObjectId(videoId)]
+                    $eq:[
+                        '$_id',
+                        { $convert: { input: videoId, to: 'objectId' } }
+                    ]
                 }
             }
         },
