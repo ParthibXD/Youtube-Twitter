@@ -1,4 +1,4 @@
-import mongoose, { isValidObjectId } from "mongoose";
+import mongoose, { isValidObjectId, mongo } from "mongoose";
 import {asyncHandler} from "../utils/asyncHandler.js";
 import {ApiError} from "../utils/ApiError.js";
 import {ApiResponse} from "../utils/ApiResponse.js";
@@ -49,14 +49,12 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     if (!isValidObjectId(channelId)) {
         throw new ApiError(400, "Invalid channelId");
     }
-    
+    channelId = new mongoose.Types.ObjectId(channelId);   
     const subscribers=await Subscription.aggregate([
         {
-            $match:{
-                $expr:{
-                    $eq:["$channel",mongoose.Types.ObjectId(channelId)]
-                }
-            }
+            $match: {
+                channel: channelId,
+            },
         },
         {
             $lookup:{
@@ -75,21 +73,23 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
                     },
                     {
                         $addFields:{
-                            "c":1,
-                            $cond:{
-                                $if:{
-                                    $in:[
-                                        channelId,
-                                        "$subscribedToSubscriber.subscriber"
-                                    ]
-                                },
-                                then:true,
-                                else:false,
+                            subscribedToSubscriber:{
+                                $cond:{
+                                    if:{
+                                        $in:[
+                                            channelId,
+                                            "$subscribedToSubscriber.subscriber"
+                                        ]
+                                    },
+                                    then:true,
+                                    else:false,
+                                }
+                            },
+                            subscriberCount:{
+                                $size:"$subscribedToSubscriber"
                             }
                         },
-                        subscriberCount:{
-                            $size:"$subscribedToSubscriber"
-                        }
+                        
                     }
                 ]
 
@@ -128,9 +128,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     const subscribedChannels= await Subscription.aggregate([
         {
             $match:{
-                $expr:{
-                    $eq:["$subscriber",mongoose.Types.ObjectId(subscriberId)]
-                }
+                subscriber:new mongoose.Types.ObjectId(subscriberId)
             }
         },
         {

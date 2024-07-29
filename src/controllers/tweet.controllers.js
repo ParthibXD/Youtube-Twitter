@@ -85,14 +85,14 @@ const deleteTweet = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Tweet not found")
     }
 
-    if(tweet?.owner.toString()!==req.body?._id.toString()){
+    if(tweet?.owner.toString()!==req.user?._id.toString()){
         throw new ApiError(400, "Invalid Authentication")
     }
 
     await Tweet.findByIdAndDelete(tweetId)
 
     return res.status(200)
-    .json(new ApiResponse(200,{tweetId}, "tweet deleted successfully"))
+    .json(new ApiResponse(200,{}, "tweet deleted successfully"))
 })
 
 
@@ -106,9 +106,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
     const tweets= await Tweet.aggregate([
         {
             $match:{
-                $expr:{
-                    $eq:["$owner",mongoose.Types.ObjectId(userId)]
-                }
+                owner:new mongoose.Types.ObjectId(userId)
             }
         },
         {
@@ -117,7 +115,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
                 localField:"owner",
                 foreignField:"_id",
                 as:"ownerDetails",
-                pipeLine:[
+                pipeline:[
                     {
                         $project:{
                             username:1,
@@ -133,7 +131,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
                 localField:"_id",
                 foreignField:"tweet",
                 as:"likesDetails",
-                pipeLine:[
+                pipeline:[
                     {
                         $project:{
                             likedBy:1,
@@ -175,7 +173,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
         }
     ])
 
-    return res.status(200).json(200,tweets,"Tweet fetched Succesfully")
+    return res.status(200).json(new ApiResponse(200,tweets,"Tweet fetched Succesfully"))
 })
 
 export { createTweet, updateTweet, deleteTweet, getUserTweets}

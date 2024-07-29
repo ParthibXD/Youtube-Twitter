@@ -40,12 +40,7 @@ const getAllVideos=asyncHandler(async(req,res)=>{
 
         pipeline.push({
             $match:{
-                $expr:{
-                    $eq:[
-                        '$_id',
-                        { $convert: { input: userId, to: 'objectId' } }
-                    ]
-                }
+                _id:new mongoose.Types.ObjectId(userId)
             }
         })
     }
@@ -70,7 +65,7 @@ const getAllVideos=asyncHandler(async(req,res)=>{
                 localField:"owner",
                 foreignField:"_id",
                 as:"ownerDetails",
-                pipeLine:[
+                pipeline:[
                     {
                         $project:{
                             username:1,
@@ -168,7 +163,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
     // let userId = req.body;
 
-    if(!isValidObjectId(videoId)){
+    if(!mongoose.Types.ObjectId.isValid(videoId)){
         throw new ApiError(400, "Video id id Invalid")
     }
 
@@ -176,16 +171,13 @@ const getVideoById = asyncHandler(async (req, res) => {
         throw new ApiResponse(400, "User id Invalid")
     }
 
+    const objectId=new mongoose.Types.ObjectId(videoId)
+
     const video= await Video.aggregate([
 
         {
             $match:{
-                $expr:{
-                    $eq:[
-                        '$_id',
-                        { $convert: { input: videoId, to: 'objectId' } }
-                    ]
-                }
+                _id:objectId
             }
         },
         {
@@ -202,10 +194,10 @@ const getVideoById = asyncHandler(async (req, res) => {
                 localField:"owner",
                 foreignField:"_id",
                 as:"owner",
-                pipeLine:[
+                pipeline:[
                     {
                         $lookup:{
-                            from:"subscritions",
+                            from:"subscriptions",
                             localField:"_id",
                             foreignField:"channel",
                             as:"subscribers"
@@ -377,7 +369,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid VideoId")
     }
 
-    const video=await findById(videoId)
+    const video=await Video.findById(videoId)
 
     if(!video){
         throw new ApiError(400, "Video not found")
@@ -447,9 +439,9 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     }
 
     return res
-    .status.json(200,
+    .status(200).json(new ApiResponse(200,
         {isPublished:toggleVideoPublish.isPublished},
-        "Video publish toggled successfully"
+        "Video publish toggled successfully")
     )
 })
 

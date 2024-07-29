@@ -549,12 +549,7 @@ const getWatchHistory = asyncHandler( async(req, res)=>{
             // }
 
             $match: {
-                $expr: {
-                    $eq: [
-                        '$_id',
-                        { $convert: { input: req.user._id, to: 'objectId' } }
-                    ]
-                }
+                _id:new mongoose.Types.ObjectId(req.user?._id)
             }
             
         },
@@ -601,7 +596,7 @@ const getWatchHistory = asyncHandler( async(req, res)=>{
     .json(
         new ApiResponse(
             200,
-            user[0].watchHistory,
+            user[0],
             "Watch History fetched Successfully"
         )
     )

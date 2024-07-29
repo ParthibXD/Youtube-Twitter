@@ -8,7 +8,7 @@ import mongoose, { isValidObjectId } from "mongoose";
 const createPlaylist = asyncHandler(async (req, res) => {
     const { name, description } = req.body;
 
-    if(!name||description){
+    if(!name||!description){
         throw new ApiError(400, "Name and Description both and required")
     }
 
@@ -131,7 +131,7 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
     const updatedPlaylist= await Playlist.findByIdAndUpdate(
         playlist?._id,
         {
-            $addtoSet:{
+            $addToSet:{
                 videos:videoId
             }
         },
@@ -149,7 +149,7 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
     .json(
         new ApiResponse(
             200,
-            updatePlaylist,
+            playlist,
             "Video Added to Playlist successfully"
         )
     )
@@ -216,12 +216,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     const playlistVideos = await Playlist.aggregate([
         {
             $match:{
-                $expr:{
-                    $eq:[
-                        "$_id",
-                        mongoose.Types.ObjectId(playlistId)
-                    ]
-                }
+                _id:new mongoose.Types.ObjectId(playlistId)
             }
         },
         {
@@ -251,7 +246,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
                     $size:"$videos"
                 },
                 totalViews:{
-                    $size:"$videos.views"
+                    $sum:"$videos.views"
                 },
                 owner:{
                     $first:"$owner"
@@ -287,7 +282,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
 
     return res.status(200)
     .json(new ApiResponse(
-        200, playlistVideos[0], "Playlist Fetched successfully"
+        200, playlistVideos, "Playlist Fetched successfully"
     ))
 })
 
@@ -298,14 +293,11 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid userId");
     }
 
-    const playlists= await Playlist.aggragate([
+    const playlists= await Playlist.aggregate([
         {
             $match:{
-                $expr:{
-                    $eq:[
-                        "$owner",mongoose.Types.ObjectId(userId)
-                    ]
-                }
+                
+                owner:new mongoose.Types.ObjectId(userId)
             }
         },
         {

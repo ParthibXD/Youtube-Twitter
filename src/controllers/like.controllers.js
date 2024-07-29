@@ -5,13 +5,13 @@ import {ApiError} from "../utils/ApiError.js";
 import {asyncHandler} from "../utils/asyncHandler.js";
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
-    const { videoID }= req.params;
+    const {videoId}= req.params;
 
-    if(!isValidObjectId(videoID)){
+    if(!isValidObjectId(videoId)){
         throw new ApiError(400, "Invalid Video Ids")
     }
     const likedAlready= await Like.findOne({
-        video:videoID,
+        video:videoId,
         likedBy:req.user?._id,
     });
 
@@ -28,7 +28,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 
 
     await Like.create({
-        video:videoID,
+        video:videoId,
         likedBy:req.user?._id
     })
 
